@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/experiment1/experiment1.cpp" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/experiment2/experiment2.cpp" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/experiment2/transformer.c" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/lexer.c" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/mode.c" charset="GBK" />
+  </component>
+</project>

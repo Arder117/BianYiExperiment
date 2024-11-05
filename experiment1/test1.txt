@@ -1,0 +1,19 @@
+   main {
+   if then else
+   while do
+   repeat until
+   for from to step
+   switch of case default
+   return
+   integer real char bool
+   and or not mod
+   { } ( ) [ ] ; , : = + - * / < <= > >= == != }
+   read write
+=
+a++;
+a = b+1;
+c--;
+10 // integer
+
+abc_4
+}

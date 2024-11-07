@@ -13,40 +13,40 @@ char keyWord[67][20] = {
 };
 
 struct FileText {
-    char text[1000]; // æ–‡ä»¶å†…å®¹
-    int length; // æ–‡ä»¶é•¿åº¦
-    int pointer; // æ–‡ä»¶æŒ‡é’ˆ
+    char text[1000]; // ÎÄ¼şÄÚÈİ
+    int length; // ÎÄ¼ş³¤¶È
+    int pointer; // ÎÄ¼şÖ¸Õë
 };
 
 FileText fileText;
 
-// å£°æ˜å‡½æ•°
-// è¾“å…¥æ–‡ä»¶å,è¿”å›æ–‡ä»¶å
+// ÉùÃ÷º¯Êı
+// ÊäÈëÎÄ¼şÃû,·µ»ØÎÄ¼şÃû
 int InputFileName(char filename[]);
-// è¯»å–æ–‡ä»¶å†…å®¹
+// ¶ÁÈ¡ÎÄ¼şÄÚÈİ
 int ReadText(char filename[], struct FileText *fileText);
-// é¢„å¤„ç†ï¼Œå»æ‰è¾“å…¥ä¸²ä¸­çš„å›è½¦ç¬¦ã€æ¢è¡Œç¬¦å’Œè·³æ ¼ç¬¦ç­‰ç¼–è¾‘æ€§æ–‡å­—ï¼Œå¤šä¸ªç©ºç™½ç¬¦åˆå¹¶ä¸ºä¸€ä¸ªã€‚
+// Ô¤´¦Àí£¬È¥µôÊäÈë´®ÖĞµÄ»Ø³µ·û¡¢»»ĞĞ·ûºÍÌø¸ñ·ûµÈ±à¼­ĞÔÎÄ×Ö£¬¶à¸ö¿Õ°×·ûºÏ²¢ÎªÒ»¸ö¡£
 int Pretreatment(struct FileText *fileText);
-// åˆ¤æ–­æ˜¯å¦ä¸ºç©ºç™½ç¬¦
+// ÅĞ¶ÏÊÇ·ñÎª¿Õ°×·û
 int isSpace(char a);
-// åˆ¤æ–­å•è¯ç§åˆ«ç ï¼Œè¿”å›ç§åˆ«ç 
+// ÅĞ¶Ïµ¥´ÊÖÖ±ğÂë£¬·µ»ØÖÖ±ğÂë
 int JudgeBreedCode(char word[]);
-// åˆ¤æ–­æ˜¯å¦ä¸ºè¿ç®—ç¬¦
+// ÅĞ¶ÏÊÇ·ñÎªÔËËã·û
 int isOperator(char a);
-// åˆ¤æ–­æ˜¯å¦ä¸ºåŒç›®è¿ç®—ç¬¦
+// ÅĞ¶ÏÊÇ·ñÎªË«Ä¿ÔËËã·û
 int isDoubleOperator(char a, char b);
-// è¯æ³•åˆ†æ
+// ´Ê·¨·ÖÎö
 int TextAnalyze(const FileText *fileText);
 
 
-// è¾“å…¥æ–‡ä»¶å
+// ÊäÈëÎÄ¼şÃû
 int InputFileName(char filename[]) {
     printf("Please input the filename:");
     scanf("%s", filename);
     return true;
 }
 
-// è¯»å–æ–‡ä»¶å†…å®¹
+// ¶ÁÈ¡ÎÄ¼şÄÚÈİ
 int ReadText(char filename[], struct FileText *fileText) {
     FILE *fp = fopen(filename, "r");
     if (fp == nullptr) {
@@ -59,9 +59,9 @@ int ReadText(char filename[], struct FileText *fileText) {
     return true;
 }
 
-// é¢„å¤„ç†ï¼Œå»æ‰è¾“å…¥ä¸²ä¸­çš„å›è½¦ç¬¦ã€æ¢è¡Œç¬¦å’Œè·³æ ¼ç¬¦ç­‰ç¼–è¾‘æ€§æ–‡å­—ï¼Œå¤šä¸ªç©ºç™½ç¬¦åˆå¹¶ä¸ºä¸€ä¸ªã€‚
+// Ô¤´¦Àí£¬È¥µôÊäÈë´®ÖĞµÄ»Ø³µ·û¡¢»»ĞĞ·ûºÍÌø¸ñ·ûµÈ±à¼­ĞÔÎÄ×Ö£¬¶à¸ö¿Õ°×·ûºÏ²¢ÎªÒ»¸ö¡£
 int Pretreatment(struct FileText *fileText) {
-    // å»é™¤æ³¨é‡Š
+    // È¥³ı×¢ÊÍ
     for (int i = 0; i < strlen(fileText->text); i++) {
         if (fileText->text[i] == '/' && fileText->text[i + 1] == '/') {
             while (fileText->text[i] != '\n') {
@@ -71,14 +71,14 @@ int Pretreatment(struct FileText *fileText) {
         }
     }
 
-    // å»é™¤å›è½¦ç¬¦ã€æ¢è¡Œç¬¦å’Œè·³æ ¼ç¬¦
+    // È¥³ı»Ø³µ·û¡¢»»ĞĞ·ûºÍÌø¸ñ·û
     for (int i = 0; i < strlen(fileText->text); i++) {
         if (fileText->text[i] == '\n' || fileText->text[i] == '\r' || fileText->text[i] == '\t') {
             fileText->text[i] = ' ';
         }
     }
 
-    // å»é™¤å¤šä¸ªç©ºæ ¼ï¼Œä¿ç•™ç¬¬ä¸€ä¸ªç©ºæ ¼
+    // È¥³ı¶à¸ö¿Õ¸ñ£¬±£ÁôµÚÒ»¸ö¿Õ¸ñ
     for (int i = 0; i < strlen(fileText->text); i++) {
         if (fileText->text[i] == ' ') {
             while (fileText->text[i + 1] == ' ') {
@@ -93,7 +93,7 @@ int Pretreatment(struct FileText *fileText) {
     return true;
 }
 
-// åˆ¤æ–­æ˜¯å¦ä¸ºç©ºæ ¼
+// ÅĞ¶ÏÊÇ·ñÎª¿Õ¸ñ
 int isSpace(char a) {
     if (a == ' ' || a == NULL) {
         return true;
@@ -101,23 +101,23 @@ int isSpace(char a) {
     return false;
 }
 
-// åˆ¤æ–­å•è¯ç§åˆ«ç 
+// ÅĞ¶Ïµ¥´ÊÖÖ±ğÂë
 int JudgeBreedCode(char word[]) {
-    // åˆ¤æ–­æ˜¯å¦ä¸ºå…³é”®å­—
+    // ÅĞ¶ÏÊÇ·ñÎª¹Ø¼ü×Ö
     for (int i = 0; i < 67; ++i) {
         if (strcmp(word, keyWord[i]) == 0) {
             return i + 1;
         }
     }
 
-    // åˆ¤æ–­æ˜¯å¦ä¸ºæ•°å­—
+    // ÅĞ¶ÏÊÇ·ñÎªÊı×Ö
     for (int i = 0; i < strlen(word); i++) {
         if (word[i] < '0' || word[i] > '9') {
             return 68;
         }
     }
 
-    // åˆ¤æ–­æ˜¯å¦ä¸ºæ ‡è¯†ç¬¦
+    // ÅĞ¶ÏÊÇ·ñÎª±êÊ¶·û
     for (int i = 0; i < strlen(word); i++) {
         if ((word[i] >= 'a' && word[i] <= 'z') || (
                 word[i] >= 'A' && word[i] <= 'Z' || word[i] == '_' || (word[i] >= '0' && word[i] <= '9'))) {
@@ -128,7 +128,7 @@ int JudgeBreedCode(char word[]) {
     return 0;
 }
 
-// åˆ¤æ–­æ˜¯å¦ä¸ºè¿ç®—ç¬¦
+// ÅĞ¶ÏÊÇ·ñÎªÔËËã·û
 int isOperator(char a) {
     if (a <= 'z' && a >= 'a' || a <= 'Z' && a >= 'A' || a <= '9' && a >= '0' || a == '_') {
         return false;
@@ -136,9 +136,9 @@ int isOperator(char a) {
     return true;
 }
 
-// åˆ¤æ–­æ˜¯å¦ä¸ºä¸¤ä¸ªè¿ç®—ç¬¦
+// ÅĞ¶ÏÊÇ·ñÎªÁ½¸öÔËËã·û
 int isDoubleOperator(char a, char b) {
-    // å…³ç³»è¿ç®—ç¬¦
+    // ¹ØÏµÔËËã·û
     if (a == '=' && b == '=') {
         return true;
     }
@@ -152,7 +152,7 @@ int isDoubleOperator(char a, char b) {
         return true;
     }
 
-    // ç®—æœ¯è¿ç®—ç¬¦
+    // ËãÊõÔËËã·û
     if (a == '+' && b == '+') {
         return true;
     }
@@ -160,7 +160,7 @@ int isDoubleOperator(char a, char b) {
         return true;
     }
 
-    // é€»è¾‘è¿ç®—ç¬¦
+    // Âß¼­ÔËËã·û
     if (a == '&' && b == '&') {
         return true;
     }
@@ -168,7 +168,7 @@ int isDoubleOperator(char a, char b) {
         return true;
     }
 
-    // ç®—æœ¯å¤åˆèµ‹å€¼è¿ç®—ç¬¦
+    // ËãÊõ¸´ºÏ¸³ÖµÔËËã·û
     if (a == '+' && b == '=') {
         return true;
     }
@@ -185,7 +185,7 @@ int isDoubleOperator(char a, char b) {
         return true;
     }
 
-    // ä½è¿ç®—å¤åˆèµ‹å€¼è¿ç®—ç¬¦
+    // Î»ÔËËã¸´ºÏ¸³ÖµÔËËã·û
     if (a == '&' && b == '=') {
         return true;
     }
@@ -205,17 +205,17 @@ int isDoubleOperator(char a, char b) {
     return false;
 }
 
-// è¯æ³•åˆ†æ
+// ´Ê·¨·ÖÎö
 int TextAnalyze(const FileText *fileText) {
-    // åˆ†å‰²å­—ç¬¦ä¸²ï¼Œå­˜å…¥Wordæ•°ç»„,å°†è¿ç®—ç¬¦ï¼Œæ ‡ç‚¹ç¬¦å·ä¸å­—ç¬¦ä¸²åˆ†å¼€,
+    // ·Ö¸î×Ö·û´®£¬´æÈëWordÊı×é,½«ÔËËã·û£¬±êµã·ûºÅÓë×Ö·û´®·Ö¿ª,
     char Word[1000][100];
     int index = 0;
     int j = 0;
     for (int i = 0; i < fileText->length; i++) {
         if (!isSpace(fileText->text[i])) {
-            // åˆ¤æ–­æ˜¯å¦ä¸ºè¿ç®—ç¬¦ï¼Œæ ‡ç‚¹ç¬¦å·
+            // ÅĞ¶ÏÊÇ·ñÎªÔËËã·û£¬±êµã·ûºÅ
             if (isOperator(fileText->text[i])) {
-                // åˆ¤æ–­æ˜¯å¦ä¸ºä¸¤ä¸ªè¿ç®—ç¬¦
+                // ÅĞ¶ÏÊÇ·ñÎªÁ½¸öÔËËã·û
                 if (isDoubleOperator(fileText->text[i], fileText->text[i + 1])) {
                     Word[index][j] = fileText->text[i];
                     Word[index][j + 1] = fileText->text[i + 1];
@@ -223,18 +223,18 @@ int TextAnalyze(const FileText *fileText) {
                     i++;
                     j = 0;
                 }
-                // ä¸ºå•ä¸ªè¿ç®—ç¬¦,åˆ™å­˜å…¥Wordæ•°ç»„
+                // Îªµ¥¸öÔËËã·û,Ôò´æÈëWordÊı×é
                 else {
                     Word[index][0] = fileText->text[i];
                     Word[index++][1] = '\0';
                 }
             }
 
-            // ä¸ºå­—ç¬¦ä¸²,æ•°å­—
+            // Îª×Ö·û´®,Êı×Ö
             else {
                 Word[index][j] = fileText->text[i];
                 j++;
-                // åˆ¤æ–­ä¸‹ä¸€ä¸ªå­—ç¬¦æ˜¯å¦ä¸ºç¬¦å·
+                // ÅĞ¶ÏÏÂÒ»¸ö×Ö·ûÊÇ·ñÎª·ûºÅ
                 if (isOperator(fileText->text[i + 1])) {
                     Word[index++][j] = '\0';
                     j = 0;
@@ -242,7 +242,7 @@ int TextAnalyze(const FileText *fileText) {
             }
         }
 
-        // é‡åˆ°ç©ºæ ¼
+        // Óöµ½¿Õ¸ñ
         else {
             if (j != 0) {
                 Word[index++][j] = '\0';

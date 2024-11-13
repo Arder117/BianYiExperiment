@@ -1,189 +1,92 @@
-//
-// Created by ZhaoHao on 24-11-5.
-//
-
 #include <bits/stdc++.h>
 using namespace std;
 
 // NFA类
 class NFA {
 public:
-    // 状态集
     vector<int> stateSets;
-    // 状态集大小
-    int stateSetSize;
+    int stateSetSize{};
 
-    // 字符集
     vector<int> charSet;
-    // 字符集大小
-    int charSetSize;
+    int charSetSize{};
 
-    // 状态转移表
     vector<vector<int> > transTable;
-    // 状态数
-    int transTableSize;
+    int transTableSize{};
 
-    // 初始状态集合
     vector<int> startStates;
 
-    // 终止状态
     vector<int> finalStates;
 
-    // 判断是否为终止状态
-    bool isFinalState(int state) {
-        for (int finalState: finalStates) {
-            if (finalState == state) {
-                return true;
-            }
-        }
-        return false;
+    bool isStartState(auto state) {
+        return startStates[0] == state;
     }
 
-    // 判断是否为初始状态
-    bool isStartState(int state) {
-        if (startStates[0] == state) {
-            return true;
-        }
-        return false;
+    bool isFinalState(auto state) {
+        return find(finalStates.begin(), finalStates.end(), state) != finalStates.end();
     }
 };
 
 // 函数声明
-void inputRE(string &re);
-
-bool isLegalRE(string re);
-
-void reTONFA(string re, NFA &nfa);
-
-int getPrecedence(char op);
-
-void infixToPostfix(string infix, string &postfix);
-
+void isValidRegex(const string &re);
+string addExplicitConcat(const string &re);
+void infixToPostfix(const string &infix, string &postfix);
+int getPrecedence(auto op);
+void updateNFAMetadata(NFA *nfa);
+NFA constructBasicNFA(char c, int &stateCounter);
+void removeDuplicates(NFA &nfa);
+NFA concatenateNFA(NFA &nfa1, NFA &nfa2);
+NFA unionNFA(NFA &nfa1, NFA &nfa2, int &stateCounter);
+NFA starNFA(NFA &nfa, int &stateCounter);
+void reToNfa(const string &postfix, NFA *nfa);
 void printNFA(NFA nfa);
 
-void printNfaData(NFA nfa);
-
-// 正则式RE作为命令行参数输入：实现源程序的输入，从键盘输入流输入正则表达式，要考虑正则表达式的合法性，出现非法字符则Error
-void inputRE(string &re) {
-    cout << "请输入正则表达式：";
-    cin >> re;
-    if (!isLegalRE(re)) {
-        cout << "Error: 正则表达式不合法" << endl;
-        exit(1);
-    }
-}
-
-// 判断正则表达式是否合法
-vector<char> legalChar = {'(', ')', '*', '|', '+', '?', '[', ']', '{', '}', '.'};
-
-bool isLegalRE(string re) {
-    for (auto c: re) {
-        if (!isdigit(c) && !isalpha(c)) {
-            bool isLegal = false;
-            for (auto legal: legalChar) {
-                if (c == legal) {
-                    isLegal = true;
-                    break;
-                }
-            }
-            if (!isLegal) return false;
+// 检查正规表达式是否合法
+void isValidRegex(const string &re) {
+    // 检查是否包含非法字符
+    for (const char c: re) {
+        if (!(isalnum(c) || c == '(' || c == ')' || c == '*' || c == '|' || c == '.' || c == '+')) {
+            cout << "正规式包含非法字符" << endl;
+            exit(1);
         }
     }
-    return true;
-}
-
-
-// 设计一个函数（方法），实现把RE确定化成一个NFA：将RE转换为相应的NFA，可以通过Thompson算法
-void reTONFA(string re, NFA &nfa) {
-    // 将中缀表达式转换为后缀表达式
-    string postfix;
-    infixToPostfix(re, postfix);
-
-    stack<NFA> nfaStack;
-
-    for (char c: postfix) {
-        if (isalnum(c)) {
-            // 如果是字符，则创建一个基本NFA
-            NFA basicNFA;
-            basicNFA.stateSets = {0, 1}; // 状态集，状态0为起始，1为终止
-            basicNFA.startStates = {0}; // 初始状态
-            basicNFA.finalStates = {1}; // 终止状态
-            basicNFA.transTable = vector<vector<int> >(2);
-            basicNFA.transTable[0].push_back(c); // 状态0通过字符c转移到状态1
-            nfaStack.push(basicNFA);
-        } else if (c == '.') {
-            // 连接操作
-            NFA nfa2 = nfaStack.top();
-            nfaStack.pop();
-            NFA nfa1 = nfaStack.top();
-            nfaStack.pop();
-            // 将nfa1的终止状态连接到nfa2的起始状态
-            for (int finalState: nfa1.finalStates) {
-                nfa1.transTable[finalState].push_back(nfa2.startStates[0]);
+    // 检查括号是否匹配
+    stack<char> s;
+    for (char c: re) {
+        if (c == '(') {
+            s.push(c);
+        } else if (c == ')') {
+            if (s.empty()) {
+                cout << "正规式括号不匹配" << endl;
+                exit(1);
             }
-            nfa1.finalStates = nfa2.finalStates;
-            nfa1.stateSets.insert(nfa1.stateSets.end(), nfa2.stateSets.begin(), nfa2.stateSets.end());
-            nfa1.transTable.insert(nfa1.transTable.end(), nfa2.transTable.begin(), nfa2.transTable.end());
-            nfaStack.push(nfa1);
-        } else if (c == '|') {
-            // 并联操作
-            NFA nfa2 = nfaStack.top();
-            nfaStack.pop();
-            NFA nfa1 = nfaStack.top();
-            nfaStack.pop();
-            NFA newNFA;
-            int start = 0, end = nfa1.stateSets.size() + nfa2.stateSets.size() + 1;
-            newNFA.startStates = {start};
-            newNFA.finalStates = {end};
-            newNFA.stateSets = {start};
-            newNFA.stateSets.insert(newNFA.stateSets.end(), nfa1.stateSets.begin(), nfa1.stateSets.end());
-            newNFA.stateSets.insert(newNFA.stateSets.end(), nfa2.stateSets.begin(), nfa2.stateSets.end());
-            newNFA.stateSets.push_back(end);
-            newNFA.transTable = vector<vector<int> >(end + 1);
-            newNFA.transTable[start].push_back(nfa1.startStates[0]);
-            newNFA.transTable[start].push_back(nfa2.startStates[0]);
-            for (int finalState: nfa1.finalStates) {
-                newNFA.transTable[finalState].push_back(end);
-            }
-            for (int finalState: nfa2.finalStates) {
-                newNFA.transTable[finalState].push_back(end);
-            }
-            nfaStack.push(newNFA);
-        } else if (c == '*') {
-            // 闭包操作
-            NFA nfa1 = nfaStack.top();
-            nfaStack.pop();
-            NFA newNFA;
-            int start = 0, end = nfa1.stateSets.size() + 1;
-            newNFA.startStates = {start};
-            newNFA.finalStates = {end};
-            newNFA.stateSets = {start};
-            newNFA.stateSets.insert(newNFA.stateSets.end(), nfa1.stateSets.begin(), nfa1.stateSets.end());
-            newNFA.stateSets.push_back(end);
-            newNFA.transTable = vector<vector<int> >(end + 1);
-            newNFA.transTable[start].push_back(nfa1.startStates[0]);
-            newNFA.transTable[start].push_back(end);
-            for (int finalState: nfa1.finalStates) {
-                newNFA.transTable[finalState].push_back(nfa1.startStates[0]);
-                newNFA.transTable[finalState].push_back(end);
-            }
-            nfaStack.push(newNFA);
+            s.pop();
         }
     }
-
-    // 栈中最终结果即为完整的NFA
-    nfa = nfaStack.top();
 }
 
+// 在操作符之间添加显式连接符
+string addExplicitConcat(const string &re) {
+    string newRe;
+    for (auto i = 0; i < re.size(); ++i) {
+        newRe += re[i];
+        if (i + 1 < re.size() && (isalnum(re[i]) || re[i] == '*' || re[i] == ')') && (
+                isalnum(re[i + 1]) || re[i + 1] == '(')) {
+            newRe += '.';
+        }
+    }
+    return newRe;
+}
+
+// 获取操作符的优先级
+int getPrecedence(auto op) {
+    if (op == '*') return 3;
+    if (op == '.') return 2;
+    if (op == '|') return 1;
+    return 0;
+}
 
 // 将中缀表达式转换为后缀表达式
-int getPrecedence(char op) {
-    if (op == '*') return 3;
-    if (op == '.' || op == '|') return 2;
-    return 1;
-}
-
-void infixToPostfix(string infix, string &postfix) {
+void infixToPostfix(const string &infix, string &postfix) {
     stack<char> ops;
     for (char c: infix) {
         if (isalnum(c)) {
@@ -191,99 +94,237 @@ void infixToPostfix(string infix, string &postfix) {
         } else if (c == '(') {
             ops.push(c);
         } else if (c == ')') {
+            // 将栈中的运算符添加到后缀表达式中,直到遇到 '('
             while (!ops.empty() && ops.top() != '(') {
                 postfix += ops.top();
                 ops.pop();
             }
             ops.pop();
         } else {
+            // 将栈中优先级大于等于当前操作符的运算符添加到后缀表达式中,直到栈为空或遇到优先级更低的运算符
             while (!ops.empty() && getPrecedence(ops.top()) >= getPrecedence(c)) {
                 postfix += ops.top();
                 ops.pop();
             }
+            // 将当前操作符入栈
             ops.push(c);
         }
     }
+    // 将栈中剩余的运算符添加到后缀表达式中
     while (!ops.empty()) {
         postfix += ops.top();
         ops.pop();
     }
 }
 
+// 更新NFA元数据
+void updateNFAMetadata(NFA *nfa) {
+    nfa->stateSetSize = nfa->stateSets.size();
+    nfa->charSetSize = nfa->charSet.size();
+    nfa->transTableSize = nfa->transTable.size();
+}
 
-// 最终输出结果
+// 构造单字符的NFA
+NFA constructBasicNFA(char c, int &stateCounter) {
+    NFA nfa;
+    nfa.stateSets = {stateCounter, stateCounter + 1};
+    nfa.startStates = {stateCounter};
+    nfa.finalStates = {stateCounter + 1};
+    nfa.charSet.push_back(c);
+    nfa.transTable.push_back({stateCounter, c, stateCounter + 1});
+    stateCounter += 2;
+    updateNFAMetadata(&nfa);
+    return nfa;
+}
+
+// 对NFA内的数组进行去重
+void removeDuplicates(NFA &nfa) {
+    // 去重状态集
+    ranges::sort(nfa.stateSets);
+    nfa.stateSets.erase(ranges::unique(nfa.stateSets).begin(), nfa.stateSets.end());
+    // 去重字符集
+    ranges::sort(nfa.charSet);
+    nfa.charSet.erase(ranges::unique(nfa.charSet).begin(), nfa.charSet.end());
+    // 去重转移表
+    ranges::sort(nfa.transTable);
+    nfa.transTable.erase(ranges::unique(nfa.transTable).begin(), nfa.transTable.end());
+    // 去重开始状态
+    nfa.startStates.erase(ranges::unique(nfa.startStates).begin(), nfa.startStates.end());
+    // 去重终止状态
+    nfa.finalStates.erase(ranges::unique(nfa.finalStates).begin(), nfa.finalStates.end());
+}
+
+// 连接NFA
+NFA concatenateNFA(NFA &nfa1, NFA &nfa2) {
+    NFA result;
+
+    result.stateSets = nfa1.stateSets;
+    result.stateSets.insert(result.stateSets.end(), nfa2.stateSets.begin(), nfa2.stateSets.end());
+
+    result.charSet = nfa1.charSet;
+    result.charSet.insert(result.charSet.end(), nfa2.charSet.begin(), nfa2.charSet.end());
+
+    for (int finalState: nfa1.finalStates) {
+        result.transTable.push_back({finalState, -1, nfa2.startStates[0]});
+    }
+    result.transTable.insert(result.transTable.end(), nfa1.transTable.begin(), nfa1.transTable.end());
+    result.transTable.insert(result.transTable.end(), nfa2.transTable.begin(), nfa2.transTable.end());
+
+    result.startStates = nfa1.startStates;
+    result.finalStates = nfa2.finalStates;
+
+    removeDuplicates(result);
+    updateNFAMetadata(&result);
+
+    return result;
+}
+
+// 并集NFA
+NFA unionNFA(NFA &nfa1, NFA &nfa2, int &stateCounter) {
+    NFA result;
+    int newStart = stateCounter++;
+    int newFinal = stateCounter++;
+
+    result.stateSets = {newStart};
+    result.stateSets.insert(result.stateSets.end(), nfa1.stateSets.begin(), nfa1.stateSets.end());
+    result.stateSets.insert(result.stateSets.end(), nfa2.stateSets.begin(), nfa2.stateSets.end());
+    result.stateSets.push_back(newFinal);
+
+    result.charSet = nfa1.charSet;
+    result.charSet.insert(result.charSet.end(), nfa2.charSet.begin(), nfa2.charSet.end());
+
+    result.transTable.push_back({newStart, -1, nfa1.startStates[0]});
+    result.transTable.push_back({newStart, -1, nfa2.startStates[0]});
+    for (int finalState: nfa1.finalStates) {
+        result.transTable.push_back({finalState, -1, newFinal});
+    }
+    for (int finalState: nfa2.finalStates) {
+        result.transTable.push_back({finalState, -1, newFinal});
+    }
+    result.transTable.insert(result.transTable.end(), nfa1.transTable.begin(), nfa1.transTable.end());
+    result.transTable.insert(result.transTable.end(), nfa2.transTable.begin(), nfa2.transTable.end());
+
+    result.startStates = {newStart};
+    result.finalStates = {newFinal};
+
+    removeDuplicates(result);
+    updateNFAMetadata(&result);
+
+    return result;
+}
+
+// 闭包NFA
+NFA starNFA(NFA &nfa, int &stateCounter) {
+    NFA result;
+    int newStart = stateCounter++;
+    int newFinal = stateCounter++;
+
+    result.stateSets = {newStart};
+    result.stateSets.insert(result.stateSets.end(), nfa.stateSets.begin(), nfa.stateSets.end());
+    result.stateSets.push_back(newFinal);
+
+    result.charSet = nfa.charSet;
+
+    result.transTable.push_back({newStart, -1, nfa.startStates[0]});
+    result.transTable.push_back({newStart, -1, newFinal});
+    for (int finalState: nfa.finalStates) {
+        result.transTable.push_back({finalState, -1, newFinal});
+        result.transTable.push_back({finalState, -1, nfa.startStates[0]});
+    }
+    result.transTable.insert(result.transTable.end(), nfa.transTable.begin(), nfa.transTable.end());
+
+    result.startStates = {newStart};
+
+    result.finalStates = {newFinal};
+
+    removeDuplicates(result);
+    updateNFAMetadata(&result);
+
+    return result;
+}
+
+void reToNfa(const string &postfix, NFA *nfa) {
+    stack<NFA> nfaStack;
+    int stateCounter = 0;
+
+    for (char c: postfix) {
+        if (isalnum(c)) {
+            NFA nfa0 = constructBasicNFA(c, stateCounter);
+            nfaStack.push(nfa0);
+        } else if (c == '.') {
+            // 连接操作,将栈顶的两个NFA连接起来
+            NFA nfa2 = nfaStack.top();
+            nfaStack.pop();
+            NFA nfa1 = nfaStack.top();
+            nfaStack.pop();
+            NFA result = concatenateNFA(nfa1, nfa2);
+            nfaStack.push(result);
+        } else if (c == '|') {
+            NFA nfa2 = nfaStack.top();
+            nfaStack.pop();
+            NFA nfa1 = nfaStack.top();
+            nfaStack.pop();
+            NFA result = unionNFA(nfa1, nfa2, stateCounter);
+            nfaStack.push(result);
+        } else if (c == '*') {
+            NFA nfa0 = nfaStack.top();
+            nfaStack.pop();
+            NFA result = starNFA(nfa0, stateCounter);
+            nfaStack.push(result);
+        }
+    }
+
+    *nfa = nfaStack.top();
+}
+
+// 打印NFA信息
 void printNFA(NFA nfa) {
     cout << "NFA" << endl;
     cout << "状态个数：" << nfa.stateSetSize << endl;
     cout << "字符个数：" << nfa.charSetSize << endl;
 
     cout << "状态转移：" << endl;
-    for (int i = 0; i < nfa.transTableSize; i++) {
-        for (int j = 0; j < nfa.transTable[i].size(); j++) {
-            if (j == 0) {
-                cout << '(' << nfa.transTable[i][j] << ',';
-            } else if (j == 1) {
-                cout << nfa.transTable[i][j] << ")->";
-            } else {
-                cout << nfa.transTable[i][j] << endl;
-            }
-        }
-    }
-
-    cout << "开始状态：";
-    for (int state: nfa.startStates) {
-        cout << state << " ";
-    }
-    cout << endl;
-
-    cout << "终止状态集：" << "{ ";
-    for (int state: nfa.finalStates) {
-        cout << state << " ";
-    }
-    cout << " }" << endl;
-}
-
-// 打印NFA数据，用于调试
-void printNfaData(NFA nfa) {
-    cout << "状态集：" << endl;
-    for (int state: nfa.stateSets) {
-        cout << state << " ";
-    }
-    cout << endl;
-
-    cout << "字符集：" << endl;
-    for (auto c: nfa.charSet) {
-        cout << c << " ";
-    }
-    cout << endl;
-
-    cout << "状态转移个数：" << endl;
-    cout << nfa.transTableSize << endl;
-    cout << "状态转移表：" << endl;
-    for (vector<int> transRow: nfa.transTable) {
-        for (int state: transRow) {
-            cout << state << " ";
+    for (auto &row: nfa.transTable) {
+        cout << '(' << row[0] << ", ";
+        if (row[1] == -1) cout << "ε";
+        else cout << static_cast<char>(row[1]);
+        cout << ") -> ";
+        for (size_t i = 2; i < row.size(); ++i) {
+            cout << row[i] << (i == row.size() - 1 ? "" : ", ");
         }
         cout << endl;
     }
 
-    cout << "初始状态：" << endl;
-    for (int state: nfa.startStates) {
-        cout << state << " " << endl;
-    }
-
-    cout << "终止状态：" << endl;
+    cout << "开始状态：" << nfa.startStates[0] << endl;
+    cout << "终结状态：" << "{ ";
     for (int state: nfa.finalStates) {
         cout << state << " ";
     }
-    cout << endl;
+    cout << " } "<< endl;
 }
 
 int main() {
     string re;
-    inputRE(re);
+    cout << "请输入正规式: ";
+    cin >> re;
+
+    // 测试
+    // re = "a(b|c)*abc";
+    // re = "a*b";
+
+    isValidRegex(re);
+
+    re = addExplicitConcat(re);
+    // cout << "添加连接符后的正规式: " << re << endl;
+
+    string postfix;
+    infixToPostfix(re, postfix);
+    // cout << "后缀表达式: " << postfix << endl;
+
     NFA nfa;
-    reTONFA(re, nfa);
+    reToNfa(postfix, &nfa);
+
     printNFA(nfa);
+
     return 0;
 }

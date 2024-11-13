@@ -37,8 +37,8 @@ public:
     vector<int> finalStates;
 
     // 判断是否为终止状态
-    bool isFinalState(int state) {
-        for (int finalState: finalStates) {
+    bool isFinalState(const auto state) {
+        for (auto finalState: finalStates) {
             if (finalState == state) {
                 return true;
             }
@@ -125,22 +125,25 @@ public:
 };
 
 // 函数声明
+
+NFA readNfaFromFile(string filename);
+void mergeArray(vector<int> array1, vector<int> array2, vector<int> *finalArray);
+void mergeNFA(NFA nfa1, NFA nfa2, NFA *nfa);
+vector<int> closure(NFA nfa, vector<int> states);
+vector<int> transition(NFA nfa, vector<int> states, int c);
+void nfaToDfa(NFA nfa, DFA *dfa);
+void minimizeDfa(DFA dfa, DFA *finalDfa);
+vector<vector<int> > initializePartition(DFA dfa);
+void splitPartition(DFA dfa, vector<int> &currentPartition, queue<vector<int> > &pendingPartition,
+                    vector<vector<int> > &partition);
+void buildMinimizedDfa(DFA dfa, vector<vector<int> > &partition, DFA &minimizedDfa);
+int getTargetState(DFA dfa, int stateIndex, int c);
 void printNfaData(NFA nfa);
-
 void printDfaData(DFA dfa);
-
 void printDfa(DFA dfa);
 
-vector<vector<int> > initializePartition(DFA dfa);
 
-void splitPartition(DFA dfa, vector<int> &currentPartition, queue<vector<int> > &worklist,
-                    vector<vector<int> > &partition);
 
-void buildMinimizedDfa(DFA dfa, vector<vector<int> > &partition, DFA &minimizedDfa);
-
-int getTargetState(DFA dfa, int stateIndex, int c);
-
-// 读取NFA描述文件
 NFA readNfaFromFile(string filename) {
     ifstream ReadFile;
     ReadFile.open(filename, ios::in);
@@ -220,7 +223,6 @@ NFA readNfaFromFile(string filename) {
     ReadFile.close();
     return nfa;
 }
-
 // 合并两个数组，去重
 void mergeArray(vector<int> array1, vector<int> array2, vector<int> *finalArray) {
     set<int> arraySet;
@@ -284,21 +286,17 @@ void mergeNFA(NFA nfa1, NFA nfa2, NFA *nfa) {
     nfa->transTable.erase(ranges::unique(nfa->transTable).begin(), nfa->transTable.end());
     sort(nfa->transTable.begin(), nfa->transTable.end());
     nfa->transTableSize = nfa->transTable.size();
-
 }
 
-
-// 通过广度遍历求state的空闭包ε_closure
+// 求空闭包
 vector<int> closure(NFA nfa, vector<int> states) {
     vector<int> closureStates;
     queue<int> queueStates;
 
-    // 如果0在startStates中，则加入closureStates
     if (ranges::find(states, 0) != states.end()) {
         closureStates.push_back(0);
     }
 
-    // 初始化队列
     for (int state: states) {
         queueStates.push(state);
     }
@@ -320,14 +318,12 @@ vector<int> closure(NFA nfa, vector<int> states) {
         }
     }
 
-    // 去重
-    sort(closureStates.begin(), closureStates.end());
-    closureStates.erase(unique(closureStates.begin(), closureStates.end()), closureStates.end());
+    ranges::sort(closureStates);
+    closureStates.erase(ranges::unique(closureStates).begin(), closureStates.end());
 
     return closureStates;
 }
 
-// 比较两个字符是否相等
 int cmp(int c1, int c2) {
     if (c1 == c2) {
         return 1;
@@ -338,7 +334,6 @@ int cmp(int c1, int c2) {
 // 状态转移
 vector<int> transition(NFA nfa, vector<int> states, int c) {
     vector<int> transitionStates;
-
     queue<int> queueStates;
 
     for (int state: states) {
@@ -347,14 +342,13 @@ vector<int> transition(NFA nfa, vector<int> states, int c) {
                 for (int j = 2; j < nfa.transTable[i].size(); j++) {
                     if (ranges::find(transitionStates, nfa.transTable[i][j]) == transitionStates.end()) {
                         transitionStates.push_back(nfa.transTable[i][j]);
-                        queueStates.push(nfa.transTable[i][j]); //将转移后的状态加入队列
+                        queueStates.push(nfa.transTable[i][j]);
                     }
                 }
             }
         }
     }
 
-    // 将状态集中的空闭包加入到转移后的状态集中
     while (!queueStates.empty()) {
         int state = queueStates.front();
         queueStates.pop();
@@ -366,9 +360,8 @@ vector<int> transition(NFA nfa, vector<int> states, int c) {
         }
     }
 
-    // 去重
-    sort(transitionStates.begin(), transitionStates.end());
-    transitionStates.erase(unique(transitionStates.begin(), transitionStates.end()), transitionStates.end());
+    ranges::sort(transitionStates);
+    transitionStates.erase(ranges::unique(transitionStates).begin(), transitionStates.end());
 
     return transitionStates;
 }
@@ -378,31 +371,24 @@ void nfaToDfa(NFA nfa, DFA *dfa) {
     // 初始化
     dfa->charSet = nfa.charSet;
     dfa->transTableSize = 0;
+
     vector<int> closureStates = closure(nfa, nfa.startStates);
     dfa->stateSet.push_back(closureStates);
 
-    // 标记状态，0表示未标记，1表示已标记
     vector<int> markedStates = {0};
     markedStates[0] = 1;
 
-    // 广度优先搜索
     queue<vector<int> > queueStates;
-
-    // 将初始状态的空闭包加入队列
     queueStates.push(closureStates);
 
     int transTableIndex = 0;
-    // 遍历队列
+
     while (!queueStates.empty()) {
-        // 取出队列中的状态
         vector<int> states = queueStates.front();
 
-        // 遍历字符集
-        for (int c: nfa.charSet) {
-            // 状态转移
+        for (auto c: nfa.charSet) {
             vector<int> transitionStates = transition(nfa, states, c);
 
-            // 状态转移为空，跳过
             if (transitionStates.empty()) {
                 continue;
             }
@@ -448,16 +434,17 @@ void nfaToDfa(NFA nfa, DFA *dfa) {
     dfa->charSetSize = nfa.charSet.size();
     dfa->transTableSize = transTableIndex;
 
-    // 设置初始状态
+    // 初始状态
     dfa->startState = 0;
     dfa->newStatesSize = 0;
-    // 设置状态集
+
+    // 状态集
     for (int i = 0; i < dfa->stateSet.size(); i++) {
         dfa->newStates.push_back(i);
         dfa->newStatesSize++;
     }
 
-    // 设置终止状态
+    // 终止状态
     for (int i = 0; i < dfa->stateSet.size(); i++) {
         for (int state: dfa->stateSet[i]) {
             if (nfa.isFinalState(state)) {
@@ -468,36 +455,30 @@ void nfaToDfa(NFA nfa, DFA *dfa) {
     }
 }
 
-
-// DFA最小化，使用Hopcroft算法最小化DFA
+// DFA最小化
 void minimizeDfa(DFA dfa, DFA *finalDfa) {
-    // 初始化最小化后的DFA
     DFA minimizedDfa;
     minimizedDfa.initDFA();
 
-    // 初始化分区
     vector<vector<int> > partition = initializePartition(dfa);
 
-    // 初始化待处理的分区集合
-    queue<vector<int> > worklist;
+    // 初始化待处理的分区
+    queue<vector<int> > pendingPartition;
     for (auto &part: partition) {
-        worklist.push(part);
+        pendingPartition.push(part);
     }
 
-    // 开始递归分割
-    while (!worklist.empty()) {
-        vector<int> currentPartition = worklist.front();
-        worklist.pop();
-
-        // 对当前分区进行拆分
-        splitPartition(dfa, currentPartition, worklist, partition);
+    // 递归分割
+    while (!pendingPartition.empty()) {
+        vector<int> currentPartition = pendingPartition.front();
+        pendingPartition.pop();
+        if (currentPartition.size() > 1) {
+            splitPartition(dfa, currentPartition, pendingPartition, partition);
+        }
     }
 
-
-    // 最小化DFA的构造（将分区转化为新状态集和状态转移表）
     buildMinimizedDfa(dfa, partition, minimizedDfa);
 
-    // 将最小化后的DFA赋值给finalDfa
     *finalDfa = minimizedDfa;
 }
 
@@ -507,7 +488,6 @@ vector<vector<int> > initializePartition(DFA dfa) {
     vector<int> nonFinalStates;
     vector<int> finalStates;
 
-    // 根据状态是否是终止状态，分为终止状态和非终止状态
     for (int i = 0; i < dfa.newStates.size(); i++) {
         if (dfa.isFinalState(dfa.newStates[i])) {
             finalStates.push_back(i);
@@ -516,14 +496,14 @@ vector<vector<int> > initializePartition(DFA dfa) {
         }
     }
 
-    // 初始化分区
-    if (!finalStates.empty()) partition.push_back(finalStates);
-    if (!nonFinalStates.empty()) partition.push_back(nonFinalStates);
+    partition.push_back(finalStates);
+    partition.push_back(nonFinalStates);
+
     return partition;
 }
 
 // 拆分当前分区，检查是否需要继续拆分
-void splitPartition(DFA dfa, vector<int> &currentPartition, queue<vector<int> > &worklist,
+void splitPartition(DFA dfa, vector<int> &currentPartition, queue<vector<int> > &pendingPartition,
                     vector<vector<int> > &partition) {
     vector<vector<int> > newPartitions;
     map<vector<int>, vector<int> > targetStateMap;
@@ -532,7 +512,6 @@ void splitPartition(DFA dfa, vector<int> &currentPartition, queue<vector<int> > 
     for (int state: currentPartition) {
         vector<int> targetStateGroups(dfa.charSet.size(), -1);
 
-        // 对每个输入字符，检查该状态的转移目标
         for (int i = 0; i < dfa.charSet.size(); i++) {
             int targetState = getTargetState(dfa, state, dfa.charSet[i]);
             targetStateGroups[i] = targetState;
@@ -550,28 +529,29 @@ void splitPartition(DFA dfa, vector<int> &currentPartition, queue<vector<int> > 
     // 如果分区发生了拆分，更新分区集合
     if (newPartitions.size() > 1) {
         // 删除原始分区
-        auto it = find(partition.begin(), partition.end(), currentPartition);
+        auto it = ranges::find(partition, currentPartition);
         if (it != partition.end()) {
             partition.erase(it);
         }
 
-        // 将新分区加入工作队列和分区集合
+        // 将新分区加入队列和分区集合
         for (auto &part: newPartitions) {
             if (part.size() > 1) {
-                worklist.push(part);
+                pendingPartition.push(part);
             }
             partition.push_back(part);
         }
     }
+
 }
 
 
 // 获取状态在某个字符下的目标状态
 int getTargetState(DFA dfa, int state, int c) {
     int targetState = -1;
-    for (int i = 0; i < dfa.transTable.size(); i++) {
-        if (dfa.transTable[i][0] == state && dfa.transTable[i][1] == c) {
-            targetState = dfa.transTable[i][2];
+    for (auto &i: dfa.transTable) {
+        if (i[0] == state && i[1] == c) {
+            targetState = i[2];
             break;
         }
     }
@@ -580,54 +560,49 @@ int getTargetState(DFA dfa, int state, int c) {
 
 // 构建最小化DFA：基于分区构建新的状态集和转移表
 void buildMinimizedDfa(DFA dfa, vector<vector<int> > &partition, DFA &minimizedDfa) {
-    // 清空最小化后的DFA数据结构
     minimizedDfa.initDFA();
 
-    // 构建新的状态集
-    for (int i = 0; i < partition.size(); i++) {
-        minimizedDfa.stateSet.push_back(partition[i]);
+    // 状态集
+    for (const auto &i: partition) {
+        minimizedDfa.stateSet.push_back(i);
     }
+    ranges::sort (minimizedDfa.stateSet);
 
-    // 对状态集按每个分区的第一个状态进行排序
-    sort(minimizedDfa.stateSet.begin(), minimizedDfa.stateSet.end(),
-         [](const vector<int> &a, const vector<int> &b) { return a[0] < b[0]; });
-
-    // 根据排序后的状态集构建新的状态集，新的状态集为分区的索引
+    // 新状态集，分区索引
     for (int i = 0; i < minimizedDfa.stateSet.size(); i++) {
-        minimizedDfa.newStates.push_back(i); // 新状态集是每个分区的索引
+        minimizedDfa.newStates.push_back(i);
     }
 
-    // 字符集（直接从原始DFA复制字符集）
+    // 字符集
     minimizedDfa.charSet = dfa.charSet;
 
-    // 初始状态，根据状态集的包含原始DFA的初始状态的分区来设置
+    // 初始状态
     for (int i = 0; i < minimizedDfa.stateSet.size(); i++) {
         for (auto state: minimizedDfa.stateSet[i]) {
             if (dfa.isStartState(state)) {
-                minimizedDfa.startState = i; // 设置为该分区的索引
+                minimizedDfa.startState = i;
                 break;
             }
         }
     }
 
-    // 终止状态集, 根据状态集的包含原始DFA的终止状态的分区来设置
+    // 终止状态
     for (int i = 0; i < minimizedDfa.stateSet.size(); i++) {
         for (auto state: minimizedDfa.stateSet[i]) {
             if (dfa.isFinalState(state)) {
-                minimizedDfa.finalStates.push_back(i); // 终止状态是该分区的索引
+                minimizedDfa.finalStates.push_back(i);
                 break;
             }
         }
     }
 
-    // 为每个状态集构建状态转移表
+    // 状态转移表
     for (int i = 0; i < minimizedDfa.stateSet.size(); i++) {
         for (int c: dfa.charSet) {
             // 获取当前分区中第一个状态的转移目标
-            int currentState = minimizedDfa.stateSet[i][0]; // 获取当前分区中的第一个状态
-            int targetState = getTargetState(dfa, currentState, c); // 获取当前状态的转移目标
+            int currentState = minimizedDfa.stateSet[i][0];
+            int targetState = getTargetState(dfa, currentState, c);
 
-            // 获取目标状态所在的分区索引
             int targetStateGroup = -1;
             for (int j = 0; j < minimizedDfa.stateSet.size(); j++) {
                 for (int state: minimizedDfa.stateSet[j]) {
@@ -641,10 +616,10 @@ void buildMinimizedDfa(DFA dfa, vector<vector<int> > &partition, DFA &minimizedD
                 }
             }
 
-            // 构建转移表：i表示当前分区，c表示输入字符，targetStateGroup表示目标分区
             minimizedDfa.transTable.push_back({i, c, targetStateGroup});
         }
     }
+
     minimizedDfa.transTableSize = minimizedDfa.transTable.size();
 }
 

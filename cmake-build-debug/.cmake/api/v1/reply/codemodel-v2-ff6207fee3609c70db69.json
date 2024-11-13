@@ -1,0 +1,78 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.29"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "Bianyi",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "experiment1::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-experiment1-Debug-5e6d50f7c0631d6a5254.json",
+					"name" : "experiment1",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "experiment2::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-experiment2-Debug-1ad2c0dc54a6218d5365.json",
+					"name" : "experiment2",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "experiment3::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-experiment3-Debug-cb734929b43ef2eb66d4.json",
+					"name" : "experiment3",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "D:/Projects/CLionProjects/Bianyi/cmake-build-debug",
+		"source" : "D:/Projects/CLionProjects/Bianyi"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 7
+	}
+}

@@ -53,6 +53,16 @@ public:
         }
         return false;
     }
+
+    // 初始化NFA
+    void initNfa() {
+        stateSetSize = 0;
+        transTableSize = 0;
+        startStates.clear();
+        finalStates.clear();
+        stateSets.clear();
+        transTable.clear();
+    }
 };
 
 // DFA类
@@ -120,6 +130,15 @@ void printNfaData(NFA nfa);
 void printDfaData(DFA dfa);
 
 void printDfa(DFA dfa);
+
+vector<vector<int> > initializePartition(DFA dfa);
+
+void splitPartition(DFA dfa, vector<int> &currentPartition, queue<vector<int> > &worklist,
+                    vector<vector<int> > &partition);
+
+void buildMinimizedDfa(DFA dfa, vector<vector<int> > &partition, DFA &minimizedDfa);
+
+int getTargetState(DFA dfa, int stateIndex, int c);
 
 // 读取NFA描述文件
 NFA readNfaFromFile(string filename) {
@@ -198,13 +217,7 @@ NFA readNfaFromFile(string filename) {
         }
     }
 
-    // 将状态转移表的元素转换为字符
-    for (int i = 0; i < nfa.transTableSize; i++) {
-        for (int j = 0; j < nfa.transTable[i].size(); j++) {
-            nfa.transTable[i][j] = nfa.transTable[i][j];
-        }
-    }
-
+    ReadFile.close();
     return nfa;
 }
 
@@ -222,40 +235,58 @@ void mergeArray(vector<int> array1, vector<int> array2, vector<int> *finalArray)
 
 // 合并两个NFA
 void mergeNFA(NFA nfa1, NFA nfa2, NFA *nfa) {
-    // 生成新起始状态：新起始状态编号为两个NFA状态集合中最大值加1。
-    nfa->startStates.push_back(max(*max_element(nfa1.stateSets.begin(), nfa1.stateSets.end()),
-                                   *max_element(nfa2.stateSets.begin(), nfa2.stateSets.end())) + 1);
-    nfa->stateSetSize = 1;
+    nfa->initNfa();
 
-    // 合并状态：包括两个NFA的状态集合和新起始状态。
-    mergeArray(nfa1.stateSets, nfa2.stateSets, &nfa->stateSets);
+    // 起始状态
+    nfa->startStates.push_back(0);
+
+    // 状态集
     nfa->stateSets.push_back(nfa->startStates[0]);
+    int offset1 = 1;
+    int offset2 = offset1 + nfa1.stateSets.size();
+
+    for (const auto &state: nfa1.stateSets) {
+        nfa->stateSets.push_back({state + offset1});
+    }
+    for (const auto &state: nfa2.stateSets) {
+        nfa->stateSets.push_back({state + offset2});
+    }
+
     nfa->stateSetSize = nfa->stateSets.size();
 
-    // 合并终止状态：直接合并两个NFA的终止状态
-    mergeArray(nfa1.finalStates, nfa2.finalStates, &nfa->finalStates);
+    // 终止状态
+    for (int state: nfa1.finalStates) {
+        nfa->finalStates.push_back(state + offset1);
+    }
+    for (int state: nfa2.finalStates) {
+        nfa->finalStates.push_back(state + offset2);
+    }
 
-    // 合并字符集
+    // 字符集
     mergeArray(nfa1.charSet, nfa2.charSet, &nfa->charSet);
 
-    // 合并转移函数：通过字典扩展合并两个NFA的转移函数
-    for (int i = 0; i < nfa1.transTableSize; i++) {
-        nfa->transTable.push_back(nfa1.transTable[i]);
+    // 转移表
+    for (const auto &trans: nfa1.transTable) {
+        nfa->transTable.push_back({trans[0] + offset1, trans[1], trans[2] + offset1});
     }
-    for (int i = 0; i < nfa2.transTableSize; i++) {
-        nfa->transTable.push_back(nfa2.transTable[i]);
+    for (const auto &trans: nfa2.transTable) {
+        nfa->transTable.push_back({trans[0] + offset2, trans[1], trans[2] + offset2});
     }
 
-    // 添加空转移：从新起始状态到原两个NFA起始状态添加空转移。
+    // 空转移
     for (int state: nfa1.startStates) {
-        nfa->transTable.push_back({nfa->startStates[0], -1, state});
+        nfa->transTable.push_back({nfa->startStates[0], -1, state + offset1});
     }
     for (int state: nfa2.startStates) {
-        nfa->transTable.push_back({nfa->startStates[0], -1, state});
+        nfa->transTable.push_back({nfa->startStates[0], -1, state + offset2});
     }
-    nfa->transTable.erase(unique(nfa->transTable.begin(), nfa->transTable.end()), nfa->transTable.end());
+
+    nfa->transTable.erase(ranges::unique(nfa->transTable).begin(), nfa->transTable.end());
+    sort(nfa->transTable.begin(), nfa->transTable.end());
     nfa->transTableSize = nfa->transTable.size();
+
 }
+
 
 // 通过广度遍历求state的空闭包ε_closure
 vector<int> closure(NFA nfa, vector<int> states) {
@@ -344,12 +375,10 @@ vector<int> transition(NFA nfa, vector<int> states, int c) {
 
 // NFA转换成DFA
 void nfaToDfa(NFA nfa, DFA *dfa) {
-    // 初始化DFA
+    // 初始化
     dfa->charSet = nfa.charSet;
     dfa->transTableSize = 0;
-
     vector<int> closureStates = closure(nfa, nfa.startStates);
-    // 使用states来存储状态集，下标为状态集的新编号，值为状态集
     dfa->stateSet.push_back(closureStates);
 
     // 标记状态，0表示未标记，1表示已标记
@@ -438,17 +467,6 @@ void nfaToDfa(NFA nfa, DFA *dfa) {
         }
     }
 }
-
-int getTargetStateGroup(vector<vector<int> > &partition, int targetState);
-
-vector<vector<int> > initializePartition(DFA dfa);
-
-void splitPartition(DFA dfa, vector<int> &currentPartition, queue<vector<int> > &worklist,
-                    vector<vector<int> > &partition);
-
-void buildMinimizedDfa(DFA dfa, vector<vector<int> > &partition, DFA &minimizedDfa);
-
-int getTargetState(DFA dfa, int stateIndex, int c);
 
 
 // DFA最小化，使用Hopcroft算法最小化DFA
@@ -741,79 +759,80 @@ void printDfaData(DFA dfa) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 3) {
-        // 只进行转换，最小化
-        NFA nfa = readNfaFromFile(argv[1]);
-        cout << "NFA数据：" << endl;
-        printNfaData(nfa);
-        cout << endl;
-
-        DFA dfa;
-        nfaToDfa(nfa, &dfa);
-        cout << "DFA数据：" << endl;
-        printDfaData(dfa);
-        cout << endl;
-
-        DFA minimizedDfa;
-        minimizeDfa(dfa, &minimizedDfa);
-        cout << "最小化后的DFA数据：" << endl;
-        printDfa(minimizedDfa);
-        return 1;
-    }
-
-    NFA nfa1 = readNfaFromFile(argv[1]);
-    NFA nfa2 = readNfaFromFile(argv[2]);
-    NFA nfa;
-    mergeNFA(nfa1, nfa2, &nfa);
-    cout << "NFA合并后的数据：" << endl;
-    printNfaData(nfa);
-    cout << endl;
-
-    DFA dfa;
-    nfaToDfa(nfa1, &dfa);
-    cout << "DFA数据：" << endl;
-    printDfaData(dfa);
-    cout << endl;
-
-    DFA minimizedDfa;
-    minimizeDfa(dfa, &minimizedDfa);
-    cout << "最小化后的DFA数据：" << endl;
-    printDfa(minimizedDfa);
-
-    // string filename = "D:/Projects/CLionProjects/Bianyi/experiment2/nfa1";
-    // string filename1 = "D:/Projects/CLionProjects/Bianyi/experiment2/nfa2";
-    // string filename2 = "D:/Projects/CLionProjects/Bianyi/experiment2/nfa3";
-
-    // 测试NFA合并
-    // NFA nfa1 = readNfaFromFile(filename);
-    // NFA nfa2 = readNfaFromFile(filename1);
-    // NFA nfa3;
-    // mergeNFA(nfa1, nfa2, &nfa3);
+    // if (argc != 3) {
+    //     // 只进行转换，最小化
+    //     NFA nfa = readNfaFromFile(argv[1]);
+    //     cout << "NFA数据：" << endl;
+    //     printNfaData(nfa);
+    //     cout << endl;
+    //
+    //     DFA dfa;
+    //     nfaToDfa(nfa, &dfa);
+    //     cout << "DFA数据：" << endl;
+    //     printDfaData(dfa);
+    //     cout << endl;
+    //
+    //     DFA minimizedDfa;
+    //     minimizeDfa(dfa, &minimizedDfa);
+    //     cout << "最小化后的DFA数据：" << endl;
+    //     printDfa(minimizedDfa);
+    //     return 1;
+    // }
+    //
+    // NFA nfa1 = readNfaFromFile(argv[1]);
+    // NFA nfa2 = readNfaFromFile(argv[2]);
+    // NFA nfa;
+    // mergeNFA(nfa1, nfa2, &nfa);
     // cout << "NFA合并后的数据：" << endl;
-    // printNfaData(nfa3);
-
-    // NFA nfa = readNfaFromFile(filename);
-    // cout << "NFA数据：" << endl;
     // printNfaData(nfa);
     // cout << endl;
     //
-    // // 测试NFA转为DFA
-    // DFA dfa = DFA();
-    // nfaToDfa(nfa, &dfa);
+    // DFA dfa;
+    // nfaToDfa(nfa1, &dfa);
     // cout << "DFA数据：" << endl;
     // printDfaData(dfa);
     // cout << endl;
     //
-    // // 测试DFA最小化
-    // DFA minimizedDfa = DFA();
-    // minimizedDfa.initDFA();
+    // DFA minimizedDfa;
     // minimizeDfa(dfa, &minimizedDfa);
     // cout << "最小化后的DFA数据：" << endl;
-    // printDfaData(minimizedDfa);
-    // cout << endl;
-    //
-    // cout << "最终输出结果DFA数据：" << endl;
     // printDfa(minimizedDfa);
+
+    string filename = "D:/Projects/CLionProjects/Bianyi/experiment2/nfa1";
+    string filename1 = "D:/Projects/CLionProjects/Bianyi/experiment2/nfa2";
+    string filename2 = "D:/Projects/CLionProjects/Bianyi/experiment2/nfa3";
+
+    // 测试NFA合并
+    NFA nfa1 = readNfaFromFile(filename);
+    NFA nfa2 = readNfaFromFile(filename1);
+    NFA nfa3;
+    mergeNFA(nfa1, nfa2, &nfa3);
+    cout << "NFA合并后的数据：" << endl;
+    printNfaData(nfa3);
+    cout << endl;
+
+    NFA nfa = readNfaFromFile(filename);
+    cout << "NFA数据：" << endl;
+    printNfaData(nfa);
+    cout << endl;
+
+    // 测试NFA转为DFA
+    DFA dfa = DFA();
+    nfaToDfa(nfa, &dfa);
+    cout << "DFA数据：" << endl;
+    printDfaData(dfa);
+    cout << endl;
+
+    // 测试DFA最小化
+    DFA minimizedDfa = DFA();
+    minimizedDfa.initDFA();
+    minimizeDfa(dfa, &minimizedDfa);
+    cout << "最小化后的DFA数据：" << endl;
+    printDfaData(minimizedDfa);
+    cout << endl;
+
+    cout << "最终输出结果DFA数据：" << endl;
+    printDfa(minimizedDfa);
 
     return 0;
 }

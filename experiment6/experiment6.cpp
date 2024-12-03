@@ -179,6 +179,8 @@ int main() {
     calculateFollow(cfg);
     calculateSelect(cfg);
 
+    printSelect();
+
     LLTable llTable;
 
     buildLLTable(cfg, llTable);

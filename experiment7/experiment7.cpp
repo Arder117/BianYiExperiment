@@ -1,5 +1,6 @@
 #include "../experiment5/function.h"
 
+
 // 项目
 class Item {
 public:
@@ -36,7 +37,7 @@ bool isTerminalState(const string &str, const CFG &cfg) {
 // 项目集
 class ItemSet {
 public:
-    int itemSetIndex{};
+    int itemSetIndex{}; //
     vector<Item> items;
 
     void addItem(const Item &item) {
@@ -130,9 +131,7 @@ void closure(const CFG &cfg, ItemSet *itemSet) {
                 }
             }
         }
-
     }
-
 }
 
 ItemSet goTo(const CFG &cfg, const ItemSet &itemSet, const string &symbol) {
@@ -156,6 +155,7 @@ void constructItemSetFamily(const CFG &cfg, ItemSetFamily *itemSetFamily) {
     for (const auto &[lhs, rhsList]: cfg.P) {
         if (lhs == cfg.S) {
             rhs1 = rhsList;
+            break;
         }
     }
 
@@ -258,8 +258,8 @@ void createLRTable(const ItemSetFamily &itemSetFamily, const CFG &cfg, const str
         return;
     }
 
-    vector<tuple<int, string, string> > actionTable;
-    vector<tuple<int, string, int> > gotoTable;
+    vector<tuple<int, string, string> > actionTable; // 存储ACTION表，
+    vector<tuple<int, string, int> > gotoTable; // 存储GOTO表，
 
     for (const auto &[index, itemSet]: itemSetFamily.itemSets) {
         // 处理ACTION表

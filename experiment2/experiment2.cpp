@@ -775,7 +775,6 @@ int main(int argc, char *argv[]) {
 
     string filename = "D:/Projects/CLionProjects/Bianyi/experiment2/nfa1";
     string filename1 = "D:/Projects/CLionProjects/Bianyi/experiment2/nfa2";
-    string filename2 = "D:/Projects/CLionProjects/Bianyi/experiment2/nfa3";
 
     // ≤‚ ‘NFA∫œ≤¢
     NFA nfa1 = readNfaFromFile(filename);

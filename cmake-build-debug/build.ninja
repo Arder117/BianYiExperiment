@@ -262,40 +262,6 @@ build experiment7.exe: CXX_EXECUTABLE_LINKER__experiment7_Debug CMakeFiles/exper
   TARGET_IMPLIB = libexperiment7.dll.a
   TARGET_PDB = experiment7.exe.dbg
 
-# =============================================================================
-# Object build statements for EXECUTABLE target t1
-
-
-#############################################
-# Order-only phony target for t1
-
-build cmake_object_order_depends_target_t1: phony || .
-
-build CMakeFiles/t1.dir/experiment7/t1.cpp.obj: CXX_COMPILER__t1_unscanned_Debug D$:/Projects/CLionProjects/Bianyi/experiment7/t1.cpp || cmake_object_order_depends_target_t1
-  DEP_FILE = CMakeFiles\t1.dir\experiment7\t1.cpp.obj.d
-  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
-  OBJECT_DIR = CMakeFiles\t1.dir
-  OBJECT_FILE_DIR = CMakeFiles\t1.dir\experiment7
-
-
-# =============================================================================
-# Link build statements for EXECUTABLE target t1
-
-
-#############################################
-# Link the executable t1.exe
-
-build t1.exe: CXX_EXECUTABLE_LINKER__t1_Debug CMakeFiles/t1.dir/experiment7/t1.cpp.obj
-  FLAGS = -g
-  LINK_FLAGS = -static
-  LINK_LIBRARIES = -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
-  OBJECT_DIR = CMakeFiles\t1.dir
-  POST_BUILD = cd .
-  PRE_LINK = cd .
-  TARGET_FILE = t1.exe
-  TARGET_IMPLIB = libt1.dll.a
-  TARGET_PDB = t1.exe.dbg
-
 
 #############################################
 # Utility command for edit_cache
@@ -334,8 +300,6 @@ build experiment6: phony experiment6.exe
 
 build experiment7: phony experiment7.exe
 
-build t1: phony t1.exe
-
 # =============================================================================
 # Folder targets.
 
@@ -344,7 +308,7 @@ build t1: phony t1.exe
 #############################################
 # Folder: D:/Projects/CLionProjects/Bianyi/cmake-build-debug
 
-build all: phony experiment1.exe experiment2.exe experiment3.exe experiment5.exe experiment6.exe experiment7.exe t1.exe
+build all: phony experiment1.exe experiment2.exe experiment3.exe experiment5.exe experiment6.exe experiment7.exe
 
 # =============================================================================
 # Built-in targets
